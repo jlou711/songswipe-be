@@ -2,7 +2,7 @@ CREATE TABLE songs (
   uri VARCHAR(255) PRIMARY KEY NOT NULL,
   name VARCHAR(255) NOT NULL,
   album VARCHAR(255) NOT NULL,
-  album_artwork VARCHAR(255),
+  album_art VARCHAR(255),
   release_date VARCHAR(255),
   likes INT,
   dislikes INT
