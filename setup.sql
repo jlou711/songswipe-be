@@ -23,7 +23,7 @@ CREATE TABLE genres (
 );
 
 INSERT INTO songs VALUES 
-  ('02MWAaffLxlfxAUY7c5dvx', 'Heat Waves', 'Dreamland (+ Bonus Levels)','https://i.scdn.co/image/ab67616d00001e02eeef81a914a1db21799c8322', '2020-08-06'),
+  ('02MWAaffLxlfxAUY7c5dvx', 'Heat Waves', 'Dreamland (+ Bonus Levels)','https://i.scdn.co/image/ab67616d00001e029e495fb707973f3390850eea', '2020-08-06'),
   ('04QTmCTsaVjcGaoxj8rSjE', 'Know Your Worth', 'Know Your Worth','https://i.scdn.co/image/ab67616d00001e026d8139ae2807fb26071e75d9', '2020-04-23'),
   ('0ERnYArznxdTBEIj1VSta8', 'man i is', 'No Pressure','https://i.scdn.co/image/ab67616d00001e021c76e29153f29cc1e1b2b434', '2020-07-24');
 

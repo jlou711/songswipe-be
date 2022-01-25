@@ -57,16 +57,17 @@ app.get("/songs", async (req, res) => {
 
 // When adding a song, also add any new artists and their genres
 app.post("/songs", async (req, res) => {
-  const { uri, name, album, album_artwork, release_date, artists } = req.body;
+  const { uri, name, album, album_art, release_date, artists } = req.body;
   const checkURI = await client.query("SELECT * FROM songs where uri = $1", [
     uri,
   ]);
   let dbresSong;
+  console.log(artists);
   try {
     if (checkURI.rowCount === 0) {
       dbresSong = await client.query(
         "INSERT INTO songs VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        [uri, name, album, album_artwork, release_date]
+        [uri, name, album, album_art, release_date]
       );
       for (let artist of artists) {
         await client.query(
@@ -93,6 +94,7 @@ app.post("/songs", async (req, res) => {
         .json({ message: "Error - duplicate song URI found", data: {} });
     }
   } catch (e) {
+    console.log(e);
     res.status(500).json({
       message: "Internal server error trying to create add new song",
       data: {},
