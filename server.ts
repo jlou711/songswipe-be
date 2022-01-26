@@ -52,7 +52,27 @@ app.get("/songs", async (req, res) => {
       artists: artistGenre,
     });
   }
-  res.status(200).json(response);
+  res.status(200).json({ message: "success", data: response });
+});
+
+app.get("/songs/popular", async (req, res) => {
+  try {
+    const dbresPopular = await client.query(
+      "SELECT * FROM songs ORDER BY likes desc LIMIT 5;"
+    );
+    const dbresUnpopular = await client.query(
+      "SELECT * FROM songs ORDER BY dislikes desc LIMIT 5;"
+    );
+    res.status(200).json({
+      message: "success",
+      data: { popular: dbresPopular.rows, unpopular: dbresUnpopular.rows },
+    });
+  } catch (e) {
+    res.status(500).json({
+      message: "Internal server error trying to fetch popular songs",
+      data: {},
+    });
+  }
 });
 
 // When adding a song, also add any new artists and their genres
@@ -62,7 +82,6 @@ app.post("/songs", async (req, res) => {
     uri,
   ]);
   let dbresSong;
-  console.log(artists);
   try {
     if (checkURI.rowCount === 0) {
       dbresSong = await client.query(
@@ -90,13 +109,36 @@ app.post("/songs", async (req, res) => {
       res.status(201).json({ message: "Success", data: dbresSong.rows });
     } else {
       res
-        .status(400)
-        .json({ message: "Error - duplicate song URI found", data: {} });
+        .status(409)
+        .json({ message: "Conflict - duplicate song URI found", data: {} });
     }
   } catch (e) {
-    console.log(e);
     res.status(500).json({
       message: "Internal server error trying to create add new song",
+      data: {},
+    });
+  }
+});
+
+app.put("/songs/:uri/:option", async (req, res) => {
+  const { uri, option } = req.params;
+  let dbres;
+  try {
+    if (option === "likes") {
+      dbres = await client.query(
+        "UPDATE songs SET likes = likes + 1 WHERE uri=$1 RETURNING *",
+        [uri]
+      );
+    } else {
+      dbres = await client.query(
+        "UPDATE songs SET dislikes = dislikes + 1 WHERE uri=$1 RETURNING *",
+        [uri]
+      );
+    }
+    res.status(200).json({ messsage: "Success", data: dbres.rows });
+  } catch (e) {
+    res.status(500).json({
+      message: "Internal server error trying to update song",
       data: {},
     });
   }
