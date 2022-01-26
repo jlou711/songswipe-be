@@ -57,17 +57,26 @@ app.get("/songs", async (req, res) => {
 
 app.get("/songs/popular", async (req, res) => {
   try {
+    /* From genres table, merge all genres to artist into a single row, do the same for artists table against song URI,
+        then merge into main songs table */
     const dbresPopular = await client.query(
-      "SELECT * FROM songs ORDER BY likes desc LIMIT 5;"
+      "Select songs.*,songs.likes - songs.dislikes AS difference, artistsgenres.artists, artistsgenres.genres from songs inner join (SELECT song_uri, STRING_AGG(artist_name, ', ') AS artists, STRING_AGG(genres, ', ') AS genres\
+      FROM (SELECT artists.*, genres.genres FROM artists INNER JOIN (SELECT artist_uri, STRING_AGG(genre, ', ') AS genres\
+      FROM genres GROUP BY artist_uri) as genres on artists.artist_uri = genres.artist_uri) as artistsgenres\
+      GROUP BY song_uri) as artistsgenres on songs.uri = artistsgenres.song_uri ORDER BY difference desc LIMIT 5;"
     );
     const dbresUnpopular = await client.query(
-      "SELECT * FROM songs ORDER BY dislikes desc LIMIT 5;"
+      "Select songs.*,songs.likes - songs.dislikes AS difference, artistsgenres.artists, artistsgenres.genres from songs inner join (SELECT song_uri, STRING_AGG(artist_name, ', ') AS artists, STRING_AGG(genres, ', ') AS genres\
+      FROM (SELECT artists.*, genres.genres FROM artists INNER JOIN (SELECT artist_uri, STRING_AGG(genre, ', ') AS genres\
+      FROM genres GROUP BY artist_uri) as genres on artists.artist_uri = genres.artist_uri) as artistsgenres\
+      GROUP BY song_uri) as artistsgenres on songs.uri = artistsgenres.song_uri ORDER BY difference asc LIMIT 5;"
     );
     res.status(200).json({
       message: "success",
       data: { popular: dbresPopular.rows, unpopular: dbresUnpopular.rows },
     });
   } catch (e) {
+    console.log(e);
     res.status(500).json({
       message: "Internal server error trying to fetch popular songs",
       data: {},
@@ -98,12 +107,21 @@ app.post("/songs", async (req, res) => {
           "SELECT * FROM genres where artist_uri = $1",
           [artist.artist_uri]
         );
+        // Check artist not already in DB
         if (checkArtistGenre.rowCount === 0) {
-          for (let genre of artist.genres)
+          //Possible for artists to not have any genres associated to them
+          if (artist.genres.length) {
+            for (let genre of artist.genres)
+              await client.query(
+                "INSERT INTO genres (artist_uri,genre) VALUES ($1, $2)",
+                [artist.artist_uri, genre]
+              );
+          } else {
             await client.query(
               "INSERT INTO genres (artist_uri,genre) VALUES ($1, $2)",
-              [artist.artist_uri, genre]
+              [artist.artist_uri, "N/A"]
             );
+          }
         }
       }
       res.status(201).json({ message: "Success", data: dbresSong.rows });
@@ -113,6 +131,7 @@ app.post("/songs", async (req, res) => {
         .json({ message: "Conflict - duplicate song URI found", data: {} });
     }
   } catch (e) {
+    console.log(e);
     res.status(500).json({
       message: "Internal server error trying to create add new song",
       data: {},
